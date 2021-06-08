@@ -176,6 +176,10 @@ class Joc:
         else:
             return (self.linii_deschise(self.__class__.JMAX) - self.linii_deschise(self.__class__.JMIN))
 
+    def estimeaza_scor2(self):
+        print("Jucatorul x:"+72-self.matr.index(self.JMIN))
+        print("Jucatorul y:"+self.matr.index(self.JMIN)-9)
+
     def __str__(self):
         sir = (" ".join([str(x) for x in self.matr[0:9]]) + "\n" +
                " ".join([str(x) for x in self.matr[9:18]]) + "\n" +
@@ -189,7 +193,7 @@ class Joc:
 
         return sir
 
-
+#initializare stare initiala
 class Stare:
     """
     Clasa folosita de algoritmii minimax si alpha-beta
@@ -323,7 +327,7 @@ def main():
     #initilizare tip joc
     raspuns_valid = False
     while not raspuns_valid:
-        tip_joc = input("Algorimul folosit? (raspundeti cu 1 sau 2)\n 1.Player vs Computer\n 2.Computer vs Computer\n 3.Player vs Player\n ")
+        tip_joc = input("Algorimul folosit? (raspundeti cu 1,2 sau 3)\n 1.Player vs Computer\n 2.Computer vs Computer\n 3.Player vs Player\n ")
         if tip_joc in ['1', '2', '3']:
             raspuns_valid = True
         else:
@@ -337,20 +341,28 @@ def main():
         else:
             print("Raspunsul trebuie sa fie x sau 0.")
 
+    raspuns_valid = False
+    while not raspuns_valid:
+        adancime = input("Adancime : 0,1,2\n")
+        if (adancime in ['0','1','2']):
+            raspuns_valid = True
+        else:
+            print("Raspunsul trebuie sa fie x sau 0.")
 
     Joc.JMAX = '0' if Joc.JMIN == 'x' else 'x'
-
+    adancime=int(adancime)
+    ADANCIME_MAX=adancime
     # initializare tabla
     tabla_curenta = Joc();
     print("Tabla initiala")
     print(str(tabla_curenta))
 
     # creare stare initiala
-    stare_curenta = Stare(tabla_curenta, 'x', ADANCIME_MAX)
+    stare_curenta = Stare(tabla_curenta, 'x', adancime)
 
     # setari interf grafica
     pygame.init()
-    pygame.display.set_caption('x si 0')
+    pygame.display.set_caption('Quoridor')
     # dimensiunea ferestrei in pixeli
     ecran = pygame.display.set_mode(size=(908, 908))  # N *100+ N-1
     Joc.initializeaza(ecran)
@@ -550,52 +562,94 @@ def main():
                     elif event.type == pygame.MOUSEBUTTONDOWN:
 
                         pos = pygame.mouse.get_pos()  # coordonatele clickului
-
+                        zidGasit = []
+                        adev = 0
                         for np in range(len(Joc.celuleGrid)):
+                            if Joc.celuleGrid[np].zid[0] and Joc.celuleGrid[np].zid[0].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 0, Joc.celuleGrid[np].zid[0]))
+                                adev = 1
+                                tups.append([np, 0])
+                            if Joc.celuleGrid[np].zid[1] and Joc.celuleGrid[np].zid[1].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 1, Joc.celuleGrid[np].zid[1]))
+                                adev = 1
+                                tups.append([np, 1])
 
-                            if Joc.celuleGrid[np].collidepoint(
-                                    pos):  # verifica daca punctul cu coord pos se afla in dreptunghi(celula)
-                                linie = np // 9
-                                coloana = np % 9
-                                ###############################
-                                if stare_curenta.tabla_joc.matr[np] == Joc.JMIN:
-                                    if (de_mutat and linie == de_mutat[0] and coloana == de_mutat[1]):
-                                        # daca am facut click chiar pe patratica selectata, o deselectez
-                                        de_mutat = False
-                                        stare_curenta.tabla_joc.deseneaza_grid()
-                                    else:
-                                        de_mutat = (linie, coloana)
-                                        # desenez gridul cu patratelul marcat
-                                        stare_curenta.tabla_joc.deseneaza_grid(np)
-                                if stare_curenta.tabla_joc.matr[np] == Joc.GOL:
-                                    if de_mutat:
-                                        #### eventuale teste legate de mutarea simbolului
-                                        stare_curenta.tabla_joc.matr[de_mutat[0] * 9 + de_mutat[1]] = Joc.GOL
-                                        de_mutat = False
-                                    # plasez simbolul pe "tabla de joc"
-                                    indPlayer=stare_curenta.tabla_joc.matr.index(Joc.JMIN)
-                                    if linie * 9 + coloana==indPlayer-1 or linie * 9 + coloana==indPlayer+1 or linie * 9 + coloana==indPlayer+9 or linie * 9 + coloana==indPlayer-9:
-                                        stare_curenta.tabla_joc.matr[indPlayer]='#'
-                                        stare_curenta.tabla_joc.matr[linie * 9 + coloana] = Joc.JMIN
-                                        Joc.coordP1=linie * 9 + coloana
-                                        # afisarea starii jocului in urma mutarii utilizatorului
-                                        print("\nTabla dupa mutarea jucatorului")
-                                        print(str(stare_curenta))
+                            if Joc.celuleGrid[np].zid[2] and Joc.celuleGrid[np].zid[2].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 2, Joc.celuleGrid[np].zid[2]))
+                                adev = 1
+                                tups.append([np, 2])
 
-                                        stare_curenta.tabla_joc.deseneaza_grid()
-                                        # testez daca jocul a ajuns intr-o stare finala
-                                        # si afisez un mesaj corespunzator in caz ca da
+                            if Joc.celuleGrid[np].zid[3] and Joc.celuleGrid[np].zid[3].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 3, Joc.celuleGrid[np].zid[3]))
+                                adev = 1
+                                tups.append([np, 3])
 
-                                        if (afis_daca_final(stare_curenta,stare_curenta.j_curent)):
-                                            break
+                        celuleAfectate = []
+                        if 0 < len(zidGasit) <= 2:
+                            for (cel, iz, zid) in zidGasit:
+                                pygame.draw.rect(Joc.display, Celula.culoareLinii, zid)
+                                cel.cod |= 2 ** iz
+                                celuleAfectate.append(cel)
+                            # doar de debug
+                            print("\nMatrice interfata: ")
+                            for l in range(9):
+                                for c in range(9):
+                                    print(Joc.celuleGrid[l * 9 + c].cod, end=" ")
+                                print()
 
-                                        # S-a realizat o mutare. Schimb jucatorul cu cel opus
-                                        stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
+                        pygame.display.update()
+                        if adev == 0:
+                            for np in range(len(Joc.celuleGrid)):
+
+                                if Joc.celuleGrid[np].dreptunghi.collidepoint(
+                                        pos):  # verifica daca punctul cu coord pos se afla in dreptunghi(celula)
+                                    linie = np // 9
+                                    coloana = np % 9
+                                    ###############################
+                                    if stare_curenta.tabla_joc.matr[np] == Joc.JMIN:
+                                        if (de_mutat and linie == de_mutat[0] and coloana == de_mutat[1]):
+                                            # daca am facut click chiar pe patratica selectata, o deselectez
+                                            de_mutat = False
+                                            stare_curenta.tabla_joc.deseneaza_grid()
+                                        else:
+                                            de_mutat = (linie, coloana)
+                                            # desenez gridul cu patratelul marcat
+                                            stare_curenta.tabla_joc.deseneaza_grid(np)
+                                    if stare_curenta.tabla_joc.matr[np] == Joc.GOL:
+                                        if de_mutat:
+                                            #### eventuale teste legate de mutarea simbolului
+                                            stare_curenta.tabla_joc.matr[de_mutat[0] * 9 + de_mutat[1]] = Joc.GOL
+                                            de_mutat = False
+                                        # plasez simbolul pe "tabla de joc"
+                                        indPlayer = stare_curenta.tabla_joc.matr.index(Joc.JMIN)
+                                        if (linie * 9 + coloana == indPlayer - 1 and [linie * 9 + coloana,
+                                                                                      1] not in tups) or \
+                                                (linie * 9 + coloana == indPlayer + 1 and [linie * 9 + coloana,
+                                                                                           3] not in tups) or \
+                                                (linie * 9 + coloana == indPlayer + 9 and [linie * 9 + coloana,
+                                                                                           0] not in tups) or \
+                                                (linie * 9 + coloana == indPlayer - 9 and [linie * 9 + coloana,
+                                                                                           2] not in tups):
+                                            stare_curenta.tabla_joc.matr[indPlayer] = '#'
+                                            stare_curenta.tabla_joc.matr[linie * 9 + coloana] = Joc.JMIN
+                                            Joc.coordP1 = linie * 9 + coloana
+                                            # afisarea starii jocului in urma mutarii utilizatorului
+                                            print("\nTabla dupa mutarea jucatorului")
+                                            print(str(stare_curenta))
+
+                                            stare_curenta.tabla_joc.deseneaza_grid()
+                                            # testez daca jocul a ajuns intr-o stare finala
+                                            # si afisez un mesaj corespunzator in caz ca da
+
+                                            if (afis_daca_final(stare_curenta, stare_curenta.j_curent)):
+                                                break
+
+                                            # S-a realizat o mutare. Schimb jucatorul cu cel opus
+                                            stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
 
 
             # --------------------------------
             else:  # jucatorul e JMAX
-                # Mutare calculator
                 # muta jucatorul
                 # [MOUSEBUTTONDOWN, MOUSEMOTION,....]
                 # l=pygame.event.get()
@@ -606,47 +660,90 @@ def main():
                     elif event.type == pygame.MOUSEBUTTONDOWN:
 
                         pos = pygame.mouse.get_pos()  # coordonatele clickului
-
+                        zidGasit = []
+                        adev = 0
                         for np in range(len(Joc.celuleGrid)):
+                            if Joc.celuleGrid[np].zid[0] and Joc.celuleGrid[np].zid[0].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 0, Joc.celuleGrid[np].zid[0]))
+                                adev = 1
+                                tups.append([np, 0])
+                            if Joc.celuleGrid[np].zid[1] and Joc.celuleGrid[np].zid[1].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 1, Joc.celuleGrid[np].zid[1]))
+                                adev = 1
+                                tups.append([np, 1])
 
-                            if Joc.celuleGrid[np].collidepoint(
-                                    pos):  # verifica daca punctul cu coord pos se afla in dreptunghi(celula)
-                                linie = np // 9
-                                coloana = np % 9
-                                ###############################
-                                if stare_curenta.tabla_joc.matr[np] == Joc.JMAX:
-                                    if (de_mutat and linie == de_mutat[0] and coloana == de_mutat[1]):
-                                        # daca am facut click chiar pe patratica selectata, o deselectez
-                                        de_mutat = False
-                                        stare_curenta.tabla_joc.deseneaza_grid()
-                                    else:
-                                        de_mutat = (linie, coloana)
-                                        # desenez gridul cu patratelul marcat
-                                        stare_curenta.tabla_joc.deseneaza_grid(np)
-                                if stare_curenta.tabla_joc.matr[np] == Joc.GOL:
-                                    if de_mutat:
-                                        #### eventuale teste legate de mutarea simbolului
-                                        stare_curenta.tabla_joc.matr[de_mutat[0] * 9 + de_mutat[1]] = Joc.GOL
-                                        de_mutat = False
-                                    # plasez simbolul pe "tabla de joc"
-                                    indPlayer = stare_curenta.tabla_joc.matr.index(Joc.JMAX)
-                                    if linie * 9 + coloana == indPlayer - 1 or linie * 9 + coloana == indPlayer + 1 or linie * 9 + coloana == indPlayer + 9 or linie * 9 + coloana == indPlayer - 9:
-                                        stare_curenta.tabla_joc.matr[indPlayer] = '#'
-                                        stare_curenta.tabla_joc.matr[linie * 9 + coloana] = Joc.JMAX
-                                        Joc.coordP2 = linie * 9 + coloana
-                                        # afisarea starii jocului in urma mutarii utilizatorului
-                                        print("\nTabla dupa mutarea jucatorului")
-                                        print(str(stare_curenta))
+                            if Joc.celuleGrid[np].zid[2] and Joc.celuleGrid[np].zid[2].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 2, Joc.celuleGrid[np].zid[2]))
+                                adev = 1
+                                tups.append([np, 2])
 
-                                        stare_curenta.tabla_joc.deseneaza_grid()
-                                        # testez daca jocul a ajuns intr-o stare finala
-                                        # si afisez un mesaj corespunzator in caz ca da
+                            if Joc.celuleGrid[np].zid[3] and Joc.celuleGrid[np].zid[3].collidepoint(pos):
+                                zidGasit.append((Joc.celuleGrid[np], 3, Joc.celuleGrid[np].zid[3]))
+                                adev = 1
+                                tups.append([np, 3])
 
-                                        if (afis_daca_final(stare_curenta, stare_curenta.j_curent)):
-                                            break
+                        celuleAfectate = []
+                        if 0 < len(zidGasit) <= 2:
+                            for (cel, iz, zid) in zidGasit:
+                                pygame.draw.rect(Joc.display, Celula.culoareLinii, zid)
+                                cel.cod |= 2 ** iz
+                                celuleAfectate.append(cel)
+                            # doar de debug
+                            print("\nMatrice interfata: ")
+                            for l in range(9):
+                                for c in range(9):
+                                    print(Joc.celuleGrid[l * 9 + c].cod, end=" ")
+                                print()
 
-                                        # S-a realizat o mutare. Schimb jucatorul cu cel opus
-                                        stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
+                        pygame.display.update()
+                        if adev == 0:
+                            for np in range(len(Joc.celuleGrid)):
+
+                                if Joc.celuleGrid[np].dreptunghi.collidepoint(
+                                        pos):  # verifica daca punctul cu coord pos se afla in dreptunghi(celula)
+                                    linie = np // 9
+                                    coloana = np % 9
+                                    ###############################
+                                    if stare_curenta.tabla_joc.matr[np] == Joc.JMAX:
+                                        if (de_mutat and linie == de_mutat[0] and coloana == de_mutat[1]):
+                                            # daca am facut click chiar pe patratica selectata, o deselectez
+                                            de_mutat = False
+                                            stare_curenta.tabla_joc.deseneaza_grid()
+                                        else:
+                                            de_mutat = (linie, coloana)
+                                            # desenez gridul cu patratelul marcat
+                                            stare_curenta.tabla_joc.deseneaza_grid(np)
+                                    if stare_curenta.tabla_joc.matr[np] == Joc.GOL:
+                                        if de_mutat:
+                                            #### eventuale teste legate de mutarea simbolului
+                                            stare_curenta.tabla_joc.matr[de_mutat[0] * 9 + de_mutat[1]] = Joc.GOL
+                                            de_mutat = False
+                                        # plasez simbolul pe "tabla de joc"
+                                        indPlayer = stare_curenta.tabla_joc.matr.index(Joc.JMAX)
+                                        if (linie * 9 + coloana == indPlayer - 1 and [linie * 9 + coloana,
+                                                                                      1] not in tups) or \
+                                                (linie * 9 + coloana == indPlayer + 1 and [linie * 9 + coloana,
+                                                                                           3] not in tups) or \
+                                                (linie * 9 + coloana == indPlayer + 9 and [linie * 9 + coloana,
+                                                                                           0] not in tups) or \
+                                                (linie * 9 + coloana == indPlayer - 9 and [linie * 9 + coloana,
+                                                                                           2] not in tups):
+                                            stare_curenta.tabla_joc.matr[indPlayer] = '#'
+                                            stare_curenta.tabla_joc.matr[linie * 9 + coloana] = Joc.JMAX
+                                            Joc.coordP2 = linie * 9 + coloana
+                                            # afisarea starii jocului in urma mutarii utilizatorului
+                                            print("\nTabla dupa mutarea jucatorului")
+                                            print(str(stare_curenta))
+
+                                            stare_curenta.tabla_joc.deseneaza_grid()
+                                            # testez daca jocul a ajuns intr-o stare finala
+                                            # si afisez un mesaj corespunzator in caz ca da
+
+                                            if (afis_daca_final(stare_curenta, stare_curenta.j_curent)):
+                                                break
+
+                                            # S-a realizat o mutare. Schimb jucatorul cu cel opus
+                        stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
 
 
 if __name__ == "__main__":
