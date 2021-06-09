@@ -63,6 +63,8 @@ class Joc:
     NR_COLOANE = 9
     JMIN = None
     JMAX = None
+    maxjminz=10
+    maxjmaxz=10
     GOL = '#'
     culoareEcran = (0, 0, 0)
     dimCelula = 50
@@ -144,7 +146,18 @@ class Joc:
                     l_mutari.append(Joc(matr_tabla_noua))
 
         return l_mutari
-
+    '''
+    def mutari(self, jucator_opus):
+        l_mutari = []
+        indJo=self.matr.index(jucator_opus)
+        for i in range(len(self.matr)):
+            if ((i==indJo-1 or i==indJo+1) and (i%9!=0 and i%9!=8)) or i==indJo+9 or i==indJo-9:
+                if self.matr[i] == self.__class__.GOL:
+                    matr_tabla_noua = list(self.matr)
+                    matr_tabla_noua[i] = jucator_opus
+                    l_mutari.append(Joc(matr_tabla_noua))
+        return l_mutari
+    '''
     # linie deschisa inseamna linie pe care jucatorul mai poate forma o configuratie castigatoare
     # practic e o linie fara simboluri ale jucatorului opus
     def linie_deschisa(self, lista, jucator):
@@ -155,14 +168,14 @@ class Joc:
         return 0
 
     def linii_deschise(self, jucator):
-        return (self.linie_deschisa(self.matr[0:3], jucator)
-                + self.linie_deschisa(self.matr[3:6], jucator)
-                + self.linie_deschisa(self.matr[6:9], jucator)
-                + self.linie_deschisa(self.matr[0:9:3], jucator)
-                + self.linie_deschisa(self.matr[1:9:3], jucator)
-                + self.linie_deschisa(self.matr[2:9:3], jucator)
-                + self.linie_deschisa(self.matr[0:9:4], jucator)  # prima diagonala
-                + self.linie_deschisa(self.matr[2:8:2], jucator))  # a doua diagonala
+        return (self.linie_deschisa(self.matr[0:9], jucator)
+                + self.linie_deschisa(self.matr[9:18], jucator)
+                + self.linie_deschisa(self.matr[18:27], jucator)
+                + self.linie_deschisa(self.matr[0:18:9], jucator)
+                + self.linie_deschisa(self.matr[1:18:9], jucator)
+                + self.linie_deschisa(self.matr[2:18:9], jucator)
+                + self.linie_deschisa(self.matr[0:18:4], jucator)  # prima diagonala
+                + self.linie_deschisa(self.matr[2:18:2], jucator))  # a doua diagonala
 
     def estimeaza_scor(self, adancime):
         t_final = self.final()
@@ -177,8 +190,8 @@ class Joc:
             return (self.linii_deschise(self.__class__.JMAX) - self.linii_deschise(self.__class__.JMIN))
 
     def estimeaza_scor2(self):
-        print("Jucatorul x:"+72-self.matr.index(self.JMIN))
-        print("Jucatorul y:"+self.matr.index(self.JMIN)-9)
+        print("Jucatorul x:"+str(72-self.coordP1))
+        print("Jucatorul y:"+str(self.coordP2-9))
 
     def __str__(self):
         sir = (" ".join([str(x) for x in self.matr[0:9]]) + "\n" +
@@ -225,6 +238,7 @@ class Stare:
 
         return l_stari_mutari
 
+
     def __str__(self):
         sir = str(self.tabla_joc) + "(Juc curent:" + self.j_curent + ")\n"
         return sir
@@ -232,12 +246,11 @@ class Stare:
 
 """ Algoritmul MinMax """
 
-
 def min_max(stare):
     if stare.adancime == 0 or stare.tabla_joc.final():
         stare.estimare = stare.tabla_joc.estimeaza_scor(stare.adancime)
         return stare
-    indexjc=stare.tabla_joc.matr.index(stare.j_curent)
+    indexjc=Joc.coordP2
     # calculez toate mutarile posibile din starea curenta
     stare.mutari_posibile = stare.mutari()
 
@@ -343,8 +356,8 @@ def main():
 
     raspuns_valid = False
     while not raspuns_valid:
-        adancime = input("Adancime : 0,1,2\n")
-        if (adancime in ['0','1','2']):
+        adancime = input("Adancime : 3,1,2\n")
+        if (adancime in ['3','1','2']):
             raspuns_valid = True
         else:
             print("Raspunsul trebuie sa fie x sau 0.")
@@ -383,40 +396,44 @@ def main():
                     elif event.type == pygame.MOUSEBUTTONDOWN:
 
                         pos = pygame.mouse.get_pos()  # coordonatele clickului
-                        zidGasit = []
-                        adev=0
-                        for np in range(len(Joc.celuleGrid)):
-                                    if Joc.celuleGrid[np].zid[0] and Joc.celuleGrid[np].zid[0].collidepoint(pos):
-                                        zidGasit.append((Joc.celuleGrid[np], 0, Joc.celuleGrid[np].zid[0]))
-                                        adev = 1
-                                        tups.append([np,0])
-                                    if Joc.celuleGrid[np].zid[1] and Joc.celuleGrid[np].zid[1].collidepoint(pos):
-                                        zidGasit.append((Joc.celuleGrid[np], 1, Joc.celuleGrid[np].zid[1]))
-                                        adev = 1
-                                        tups.append([np, 1])
+                        if Joc.maxjminz>0:
+                            zidGasit = []
+                            adev=0
+                            for np in range(len(Joc.celuleGrid)):
+                                        if Joc.celuleGrid[np].zid[0] and Joc.celuleGrid[np].zid[0].collidepoint(pos):
+                                            zidGasit.append((Joc.celuleGrid[np], 0, Joc.celuleGrid[np].zid[0]))
+                                            adev = 1
+                                            tups.append([np,0])
 
-                                    if Joc.celuleGrid[np].zid[2] and Joc.celuleGrid[np].zid[2].collidepoint(pos):
-                                        zidGasit.append((Joc.celuleGrid[np], 2,Joc.celuleGrid[np].zid[2]))
-                                        adev = 1
-                                        tups.append([np,2])
+                                        if Joc.celuleGrid[np].zid[1] and Joc.celuleGrid[np].zid[1].collidepoint(pos):
+                                            zidGasit.append((Joc.celuleGrid[np], 1, Joc.celuleGrid[np].zid[1]))
+                                            adev = 1
+                                            tups.append([np, 1])
 
-                                    if Joc.celuleGrid[np].zid[3] and Joc.celuleGrid[np].zid[3].collidepoint(pos):
-                                        zidGasit.append((Joc.celuleGrid[np], 3, Joc.celuleGrid[np].zid[3]))
-                                        adev = 1
-                                        tups.append([np, 3])
+                                        if Joc.celuleGrid[np].zid[2] and Joc.celuleGrid[np].zid[2].collidepoint(pos):
+                                            zidGasit.append((Joc.celuleGrid[np], 2,Joc.celuleGrid[np].zid[2]))
+                                            adev = 1
+                                            tups.append([np,2])
 
-                        celuleAfectate = []
-                        if 0 < len(zidGasit) <= 2:
-                            for (cel, iz, zid) in zidGasit:
-                                pygame.draw.rect(Joc.display, Celula.culoareLinii, zid)
-                                cel.cod |= 2 ** iz
-                                celuleAfectate.append(cel)
-                            # doar de debug
-                            print("\nMatrice interfata: ")
-                            for l in range(9):
-                                for c in range(9):
-                                    print(Joc.celuleGrid[l*9+c].cod, end=" ")
-                                print()
+                                        if Joc.celuleGrid[np].zid[3] and Joc.celuleGrid[np].zid[3].collidepoint(pos):
+                                            zidGasit.append((Joc.celuleGrid[np], 3, Joc.celuleGrid[np].zid[3]))
+                                            adev = 1
+                                            tups.append([np, 3])
+
+                            celuleAfectate = []
+                            if 0 < len(zidGasit) <= 2:
+                                for (cel, iz, zid) in zidGasit:
+                                    pygame.draw.rect(Joc.display, Celula.culoareLinii, zid)
+                                    cel.cod |= 2 ** iz
+                                    celuleAfectate.append(cel)
+                                # doar de debug
+                                Joc.maxjminz=Joc.maxjminz-1
+                                print("\nMatrice interfata: ")
+                                for l in range(9):
+                                    for c in range(9):
+                                        print(Joc.celuleGrid[l*9+c].cod, end=" ")
+                                    print()
+                                stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
 
                         pygame.display.update()
                         if adev==0:
@@ -453,7 +470,7 @@ def main():
                                             # afisarea starii jocului in urma mutarii utilizatorului
                                             print("\nTabla dupa mutarea jucatorului")
                                             print(str(stare_curenta))
-
+                                            print(Joc.estimeaza_scor2(Joc))
                                             stare_curenta.tabla_joc.deseneaza_grid()
                                             # testez daca jocul a ajuns intr-o stare finala
                                             # si afisez un mesaj corespunzator in caz ca da
@@ -596,6 +613,7 @@ def main():
                                 for c in range(9):
                                     print(Joc.celuleGrid[l * 9 + c].cod, end=" ")
                                 print()
+                            stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
 
                         pygame.display.update()
                         if adev == 0:
@@ -662,6 +680,7 @@ def main():
                         pos = pygame.mouse.get_pos()  # coordonatele clickului
                         zidGasit = []
                         adev = 0
+                        #testeaza daca suntem cu mouse ul pe un zid
                         for np in range(len(Joc.celuleGrid)):
                             if Joc.celuleGrid[np].zid[0] and Joc.celuleGrid[np].zid[0].collidepoint(pos):
                                 zidGasit.append((Joc.celuleGrid[np], 0, Joc.celuleGrid[np].zid[0]))
@@ -694,6 +713,7 @@ def main():
                                 for c in range(9):
                                     print(Joc.celuleGrid[l * 9 + c].cod, end=" ")
                                 print()
+                            stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
 
                         pygame.display.update()
                         if adev == 0:
